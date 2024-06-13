@@ -15,13 +15,14 @@ typedef struct {
     SDL_Texture* texture;
     char* text;
     bool visible;
+    int state;
 } Button;
 
 // 函式原型宣告
 bool initSDL(SDL_Window** window, SDL_Renderer** renderer);
 void closeSDL(SDL_Window* window, SDL_Renderer* renderer, Button* startButton, Button* dialogButton, SDL_Texture* backgroundTexture, SDL_Texture* maldivesTexture, TTF_Font* font);
 bool loadMedia(SDL_Renderer* renderer, SDL_Texture** backgroundTexture, SDL_Texture** maldivesTexture, TTF_Font** font, Button* startButton, Button* dialogButton);
-void handleEvents(SDL_Event* e, bool* running, bool* showMaldives, Button* startButton, Button* dialogButton);
+void handleEvents(SDL_Event* e, bool* running, bool* showMaldives, Button* startButton, Button* dialogButton,SDL_Renderer* renderer,TTF_Font* font);
 void render(SDL_Renderer* renderer, SDL_Texture* backgroundTexture, SDL_Texture* maldivesTexture, Button* startButton, Button* dialogButton, bool showMaldives);
 void updateButtonTexture(Button* button, SDL_Renderer* renderer, TTF_Font* font);
 
@@ -49,7 +50,7 @@ int main(int argc, char* argv[]) {
             // 事件迴圈
             SDL_Event e;
             while (running) {
-                handleEvents(&e, &running, &showMaldives, &startButton, &dialogButton);
+                handleEvents(&e, &running, &showMaldives, &startButton, &dialogButton, renderer, font);
                 render(renderer, backgroundTexture, maldivesTexture, &startButton, &dialogButton, showMaldives);
             }
         }
@@ -161,24 +162,75 @@ bool loadMedia(SDL_Renderer* renderer, SDL_Texture** backgroundTexture, SDL_Text
         return false;
     }
 
-    // 創建按鈕
-    // ...按鈕創建代碼...
+    // 創建 "Start" 按鈕
+    SDL_Color textColor = {255, 255, 255}; // 白色文字
+    SDL_Surface* textSurface = TTF_RenderText_Solid(*font, "Start", textColor);
+    startButton->texture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    startButton->rect = (SDL_Rect){WINDOW_WIDTH / 2 - textSurface->w / 2, WINDOW_HEIGHT / 2 - textSurface->h / 2, textSurface->w, textSurface->h};
+    startButton->text = "Start";
+    startButton->visible = true;
+    SDL_FreeSurface(textSurface);
+
+    // 初始化 dialogButton
+    dialogButton->rect = (SDL_Rect){0, WINDOW_HEIGHT - WINDOW_HEIGHT / 3, WINDOW_WIDTH, WINDOW_HEIGHT / 3};
+    dialogButton->text = "this is text in maldives";
+    dialogButton->visible = false; // 初始時不可見
+    dialogButton->state = 0; // 初始狀態為 0
+    updateButtonTexture(dialogButton, renderer, *font); // 創建紋理
+
+    // 設置字體大小為 24
+    *font = TTF_OpenFont(TEXT_PATH, 24);
+    if (*font == NULL) {
+        printf("Failed to load font %s! SDL_ttf Error: %s\n", TEXT_PATH, TTF_GetError());
+        // ...釋放之前加載的資源代碼...
+        return false;
+    }
+
+    // 創建帶有黑色背景和透明度的按鈕紋理
+    SDL_Color backgroundColor = {0, 0, 0, 204}; // 黑色背景，透明度約為 80%
+    textSurface = TTF_RenderText_Shaded(*font, dialogButton->text, textColor, backgroundColor);
+    dialogButton->texture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    SDL_FreeSurface(textSurface);
 
     return true;
 }
 
 // 處理事件的函式
-void handleEvents(SDL_Event* e, bool* running, bool* showMaldives, Button* startButton, Button* dialogButton) {
+void handleEvents(SDL_Event* e, bool* running, bool* showMaldives, Button* startButton, Button* dialogButton,SDL_Renderer* renderer,TTF_Font* font) {
     while (SDL_PollEvent(e) != 0) {
         if (e->type == SDL_QUIT) {
             *running = false;
-        } else if (e->type == SDL_MOUSEBUTTONDOWN) {
+        }
+        
+        if (e->type == SDL_MOUSEBUTTONDOWN) {
             int x, y;
             SDL_GetMouseState(&x, &y);
-            // ...事件處理代碼...
+            if (startButton->visible && x >= startButton->rect.x && x <= (startButton->rect.x + startButton->rect.w) &&
+                y >= startButton->rect.y && y <= (startButton->rect.y + startButton->rect.h)) {
+                // 按鈕被點擊，執行相應操作
+                startButton->visible = false; // 隱藏 "Start" 按鈕
+                *showMaldives = true; // 顯示 Maldives 圖片
+            }
+        }
+
+        if (e->type == SDL_MOUSEBUTTONDOWN && dialogButton->visible) {
+            int x, y;
+            SDL_GetMouseState(&x, &y);
+            if (x >= dialogButton->rect.x && x <= (dialogButton->rect.x + dialogButton->rect.w) &&
+                y >= dialogButton->rect.y && y <= (dialogButton->rect.y + dialogButton->rect.h)) {
+                // 更新按鈕狀態和文字
+                dialogButton->state = !dialogButton->state;
+                if (dialogButton->state) {
+                    dialogButton->text = "you can edit it to change text";
+                } else {
+                    dialogButton->text = "this is text in maldives"; 
+                }
+                updateButtonTexture(dialogButton, renderer, font); // 更新紋理
+            }
         }
     }
 }
+
 
 // 渲染的函式
 void render(SDL_Renderer* renderer, SDL_Texture* backgroundTexture, SDL_Texture* maldivesTexture, Button* startButton, Button* dialogButton, bool showMaldives) {
@@ -192,8 +244,17 @@ void render(SDL_Renderer* renderer, SDL_Texture* backgroundTexture, SDL_Texture*
         SDL_RenderCopy(renderer, maldivesTexture, NULL, NULL);
     }
 
-    // 渲染按鈕
-    // ...按鈕渲染代碼...
+    // 如果 showMaldives 為 true，則顯示 dialogButton
+    if (showMaldives) {
+        // 設置混合模式以應用透明度
+        SDL_SetTextureBlendMode(dialogButton->texture, SDL_BLENDMODE_BLEND);
+        SDL_RenderCopy(renderer, dialogButton->texture, NULL, &dialogButton->rect);
+    }
+
+    // 渲染 "Start" 按鈕
+    if (startButton->visible) {
+        SDL_RenderCopy(renderer, startButton->texture, NULL, &startButton->rect);
+    }
 
     // 更新屏幕
     SDL_RenderPresent(renderer);
