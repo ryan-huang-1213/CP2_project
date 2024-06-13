@@ -1,7 +1,7 @@
 # 使用說明 
 ```
 make
-./main
+./sdl_game
 ```
 
 # 作者 
