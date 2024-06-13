@@ -1,8 +1,39 @@
+#include "uchow.h"
+
+int main()
+{
+    //reset
+    Becca = 0;
+    end = 0;
+    wrong = 0;
+    line1 = 0;
+    for(int32_t i = 0; i < 4; i++)
+    {
+        like.Becca = 0;
+        like.Don = 0;
+        like.Police = 0;
+        like.Street = 0;
+    }
+    for(int32_t i = 0; i < 3; i++)
+    {
+        backpack.airpods = 0;
+        backpack.donpaper = 0;
+        backpack.picture = 0;
+        backpack.nopicture = 0;
+    }
+
+    int32_t choice = 0;
+    story(choice);
+
+
+    return 0;
+}
+
+
+/*
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
-#include <stdbool.h>
-
 // 設定視窗寬高
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -215,3 +246,4 @@ void updateDialogTexture(SDL_Renderer* renderer, TTF_Font* font, Dialog* dialog)
     dialog->rect.w = textWidth;
     dialog->rect.h = textHeight;
 }
+*/
