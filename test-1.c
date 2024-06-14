@@ -2,14 +2,11 @@
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#define WINDOW_WIDTH 1600
-#define WINDOW_HEIGHT 900
-#define DIALOG_HEIGHT (WINDOW_HEIGHT / 3) // 對話按鈕的高度
-#define TEXT_PATH "source/text/cjkfonts_handingwriting4.ttf"
-#define MAX_SCENES 3
-#define MAX_DIALOGS 4
+#include "uchow.h"
 
+/*
 typedef struct {
     char* path; // 圖片的相對路徑
     SDL_Texture* texture;
@@ -55,13 +52,14 @@ typedef struct {
     SDL_Rect rect; // 背包的矩形區域
     // 可以添加更多背包相關的屬性，如道具列表等
 } Backpack;
+*/
 
 // 函式宣告
 bool initSDL(SDL_Window** window, SDL_Renderer** renderer);
 void closeSDL(SDL_Window* window, SDL_Renderer* renderer, Scene scenes[], TTF_Font* font, int totalScenes);
 bool loadMedia(SDL_Renderer* renderer, Scene scenes[], TTF_Font** font);
 void render(SDL_Renderer* renderer, Scene scenes[], int currentSceneIndex);
-void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], Backpack* backpack, int totalScenes)
+void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes);
 void updateDialogTexture(SDL_Renderer* renderer, TTF_Font* font, Dialog* dialog);
 
 int main(int argc, char* argv[]) {
@@ -71,100 +69,21 @@ int main(int argc, char* argv[]) {
 
     // 後端修改區 開始 
 
-    Scene scenes[MAX_SCENES] = {
-        {
-            (Asset[2]){
-                {"source/image/maldives.bmp", NULL, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}},
-                {"source/image/tmp_background.jpg", NULL, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}}
-            },
-            2,
-            (Asset[1]){{"source/character/LG.png", NULL, {0, 0, 0, 0}}}, // 新增角色
-            1, // 總角色數量更新為 1
-            (Dialog[4]){{"這是馬爾地夫，是一個眾所周知的旅遊勝地", NULL, {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT}, 0},
-                        {"該地以其優美的大海還有沙灘聞名於世", NULL, {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT}, 0},
-                        {
-                            "L紀的夢想是有朝一日可以去馬爾地夫好好度假。奈何教授薪資對於遊玩馬爾地夫來說，屬實是杯水車薪。這裡臨時增加很多很多很多很多很多的文字這裡臨時增加很多很多很多很多很多的文字這裡臨時增加很多很多很多很多很多的文字",
-                            NULL,
-                            {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT},
-                            1,
-                            scenes[0].characters, // 指向第一個場景的角色
-                            1 // 第三句話時有一個角色出現
-                        },
-                        {               
-                            "所以，他決定臨時找一些工作去賺更多錢，好讓夢想早日成真。不過L紀要做甚麼工作呢 ? ",
-                            NULL,
-                            {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT},
-                            1,
-                            scenes[0].characters, // 指向第一個場景的角色
-                            1 // 第四句話時有一個角色出現
-                        }
-            },
-            4,
-            0,
-            0
-        },
-        {
-            (Asset[2]){
-                {"source/image/體育場.jpg", NULL, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}},
-                {"source/image/晚上的公園.jpg", NULL, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}}
-            },
-            2,
-            (Asset[2]){
-                {"source/character/LG.png", NULL, {0, 0, 0, 0}},
-                {"source/character/Becca.jpg", NULL, {0, 0, 0, 0}},
-            }, // 新增角色
-            2, // 總角色數量更新為 2
-            (Dialog[2]){
-                {"辛苦工作了一天，來看看錢包裡面有多少錢 ( 打開錢包 )", NULL, {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT}, 0},
-                {"什麼 !? 忙了這麼久居然只有 10 元，連茶葉蛋都買不起吧 ? ", NULL, {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT}, 1}
-            },
-            2,
-            0,
-            0
-        }, 
-        {
-            (Asset[2]){
-                {"source/image/tmp_background.jpg", NULL, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}},
-                {"source/image/生態池.jpg", NULL, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}}
-            },
-            2,
-            (Asset[2]){
-                {"source/character/LG.png", NULL, {0, 0, 0, 0}},
-                {"source/character/Jenny.jpg", NULL, {0, 0, 0, 0}},
-            }, // 新增角色
-            2, // 總角色數量更新為 2
-            (Dialog[2]){{"為了馬爾地夫，只能忍氣吞聲來到這裡工作了", NULL, {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT}, 0},
-                         {"終於到了午休時段了，來生態池旁邊休息一下吧", NULL, {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT}, 0}
-            },
-            2,
-            0,
-            0
-        }
-        // ... Other scenes
-    };
+    Scene scenes[1];
 
-    scenes[1].dialogs[0].at_background = 0; // 第一個對話對應第一張背景圖
-    scenes[1].dialogs[1].at_background = 1; // 第二個對話對應第二張背景圖
-    scenes[2].dialogs[0].at_background = 0; // 第一個對話對應第一張背景圖
-    scenes[2].dialogs[1].at_background = 1; // 第二個對話對應第二張背景圖
-
-    scenes[0].nextSceneIndex = 1;
-    scenes[1].nextSceneIndex = 0;
-    scenes[2].nextSceneIndex = 0;
-
-    // 設置角色的位置
-    scenes[0].characters[0].rect.x = 0; // 角色出現在視窗的左側
-    scenes[0].characters[0].rect.y = WINDOW_HEIGHT * 0.3; // 根據需要調整 y 值
-    scenes[0].characters[0].rect.w = 250;
-    scenes[0].characters[0].rect.h = 450;
-
-    Backpack backpack;
-    backpack.visible = false; // 預設背包不可見
-    // 設置背包的矩形區域為視窗的 80%
-    backpack.rect.x = WINDOW_WIDTH * 0.1; // 起始於視窗寬度的 10%
-    backpack.rect.y = WINDOW_HEIGHT * 0.1; // 起始於視窗高度的 10%
-    backpack.rect.w = WINDOW_WIDTH * 0.8; // 寬度為視窗的 80%
-    backpack.rect.h = WINDOW_HEIGHT * 0.8; // 高度為視窗的 80%
+    int32_t now_scene=0;
+    story(now_scene,&scenes);
+    Dialog dialogs[10];
+    scenes[0].dialogs[0].text = "Start the game!\n";
+    scenes[0].dialogs[0].texture = NULL;
+    scenes[0].dialogs[0].rect.x = 0;
+    scenes[0].dialogs[0].rect.y = WINDOW_HEIGHT - DIALOG_HEIGHT;
+    scenes[0].dialogs[0].rect.w = WINDOW_WIDTH;
+    scenes[0].dialogs[0].rect.h = DIALOG_HEIGHT;
+    scenes[0].dialogs[0].at_background = 0;
+    scenes[0].dialogs[0].characters = NULL;
+    scenes[0].dialogs[0].totalCharacters = 0;
+    scenes[0].dialogs[0].speaker = caption;
 
     // 初始化選項
     Option options[] = {
@@ -379,103 +298,10 @@ void render(SDL_Renderer* renderer, Scene scenes[], int currentSceneIndex) {
 
     // 渲染對話文本
     SDL_RenderCopy(renderer, currentDialog->texture, NULL, &currentDialog->rect);
-
-    if (backpack->visible) {
-        // 設置背景的半透明黑色遮罩
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 102); // 40% 透明度的黑色
-        SDL_RenderFillRect(renderer, NULL); // 覆蓋整個視窗
-        // 設置並渲染背包的矩形區域
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // 白色
-        SDL_RenderFillRect(renderer, &backpack->rect); // 渲染背包的矩形區域
-
-        // 在這裡添加渲染背包內容的代碼，如道具圖標等
-    }
     
     SDL_RenderPresent(renderer);
 }
 
-/*
-void render(SDL_Renderer* renderer, Scene scenes[], int currentSceneIndex) {
-    SDL_RenderClear(renderer);
-    Scene* currentScene = &scenes[currentSceneIndex];
-    // 渲染當前背景
-    SDL_RenderCopy(renderer, currentScene->backgrounds[currentScene->currentBackgroundIndex].texture, NULL, NULL);
-    
-    Dialog* currentDialog = &currentScene->dialogs[currentScene->currentDialogIndex];
-    // 渲染對話中指定的角色
-    for (int i = 0; i < currentDialog->totalCharacters; i++) {
-        SDL_RenderCopy(renderer, currentDialog->characters[i].texture, NULL, &currentDialog->characters[i].rect);
-    }
-
-    // 計算並渲染選項
-    int optionY = WINDOW_HEIGHT - DIALOG_HEIGHT - 20; // 從對話框上方 20px 開始
-    for (int i = 0; i < currentDialog->totalOptions; i++) {
-        // 設置選項的位置
-        currentDialog->options[i].rect.x = WINDOW_WIDTH - currentDialog->options[i].rect.w - 20; // 靠右對齊，留出邊距
-        currentDialog->options[i].rect.y = optionY - (currentDialog->options[i].rect.h + 10) * i; // 每個選項上移並相距 10px
-        // 渲染選項
-        SDL_RenderCopy(renderer, currentDialog->options[i].texture, NULL, &currentDialog->options[i].rect);
-    }
-
-    // 渲染對話按鈕背景
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 204); // 設置為半透明黑色
-    SDL_Rect dialogRect = {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT};
-    SDL_RenderFillRect(renderer, &dialogRect);
-    // 渲染對話文本
-    
-    SDL_RenderCopy(renderer, currentDialog->texture, NULL, &currentDialog->rect);
-    SDL_RenderPresent(renderer);
-}
-*/
-/*
-void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes) {
-    while (SDL_PollEvent(e) != 0) {
-        if (e->type == SDL_QUIT) {
-            *running = false;
-        } else if (e->type == SDL_MOUSEBUTTONDOWN) {
-            int x, y;
-            SDL_GetMouseState(&x, &y);
-            Dialog* currentDialog = &scenes[*currentSceneIndex].dialogs[scenes[*currentSceneIndex].currentDialogIndex];
-            // 檢查是否點擊了對話區域
-            if (y > WINDOW_HEIGHT - DIALOG_HEIGHT) {
-                Scene* currentScene = &scenes[*currentSceneIndex];
-                currentScene->currentDialogIndex = (currentScene->currentDialogIndex + 1) % currentScene->totalDialogs;
-                Dialog* currentDialog = &currentScene->dialogs[currentScene->currentDialogIndex];
-                // 如果對話所屬的背景和當前的不同，則需要切換背景
-                if (currentDialog->at_background != currentScene->currentBackgroundIndex) {
-                    currentScene->currentBackgroundIndex = currentDialog->at_background;
-                }
-            }
-
-            // 檢查是否點擊了選項
-            for (int i = 0; i < currentDialog->totalOptions; i++) {
-                SDL_Rect optionRect = currentDialog->options[i].rect;
-                if (x >= optionRect.x && x <= (optionRect.x + optionRect.w) &&
-                    y >= optionRect.y && y <= (optionRect.y + optionRect.h)) {
-                    // 更新場景索引
-                    *currentSceneIndex = currentDialog->options[i].nextSceneIndex;
-                    // 重置當前場景的對話索引，以便從新場景的第一句話開始
-                    scenes[*currentSceneIndex].currentDialogIndex = 0;
-                    // 更新場景的背景索引
-                    scenes[*currentSceneIndex].currentBackgroundIndex = scenes[*currentSceneIndex].dialogs[0].at_background;
-                    // 更新下一個場景索引
-                    scenes[*currentSceneIndex].nextSceneIndex = currentDialog->options[i].nextSceneIndex;
-                }
-            }
-
-            // 檢查對話是否結束並更新場景
-            Scene* currentScene = &scenes[*currentSceneIndex];
-            if (currentScene->currentDialogIndex >= currentScene->totalDialogs - 1) {
-                // 如果當前對話是場景中的最後一個，則跳轉到下一個場景
-                *currentSceneIndex = currentScene->nextSceneIndex;
-                currentScene->currentDialogIndex = 0; // 重置對話索引
-                currentScene->currentBackgroundIndex = scenes[*currentSceneIndex].dialogs[0].at_background; // 更新背景
-            }
-        }
-    }
-}
-*/
 void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes) {
     while (SDL_PollEvent(e) != 0) {
         if (e->type == SDL_QUIT) {
@@ -526,6 +352,7 @@ void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene sce
                 }
             }
         }
+        /*
         if(e->type == SDL_KEYDOWN){
             switch (e->key.keysym.sym) {
                 case SDLK_b:
@@ -533,5 +360,6 @@ void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene sce
                     break;
             }
         }
+        */
     }
 }
