@@ -1,0 +1,4 @@
+all:
+    gcc -c main.c
+    gcc -c uchow.c
+    gcc main.o uchow.o -o uchow
