@@ -1,12 +1,18 @@
 CC := gcc
-CFLAGS := `sdl2-config --cflags` -Wall -O2
-LDFLAGS := `sdl2-config --libs` -lSDL2_image -lSDL2_ttf
+CFLAGS := $(shell sdl2-config --cflags) -Wall -O2
+LDFLAGS := $(shell sdl2-config --libs) -lSDL2_image -lSDL2_ttf
 
 TARGET := sdl_game
 SRC := test-1.c
+OBJ := test-1.o uchow.o
 
-$(TARGET): $(SRC)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+# 編譯 .c 檔案成 .o 檔案
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# 鏈接所有 .o 檔案成最終的執行檔
+$(TARGET): $(OBJ)
+	$(CC) $^ $(LDFLAGS) -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(OBJ)
