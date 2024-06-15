@@ -9,8 +9,8 @@
 #define WINDOW_HEIGHT 900
 #define DIALOG_HEIGHT (WINDOW_HEIGHT / 3) // 對話按鈕的高度
 #define TEXT_PATH "source/text/cjkfonts_handingwriting4.ttf"
-#define MAX_SCENES 3
-#define MAX_DIALOGS 4
+#define MAX_SCENES 50
+#define MAX_DIALOGS 10
 
 typedef struct _backpack
 {
@@ -28,15 +28,16 @@ typedef struct _like
     int32_t Police;
     int32_t girl;
 }Like;
-
+/*
 Like like;
 Backpack backpack;
-
+*/
+/*
 int32_t Becca;
 int32_t end;
 int32_t wrong;
 int32_t line1;
-
+*/
 
 typedef struct {
     char* path; // 圖片的相對路徑
@@ -76,9 +77,11 @@ typedef struct {
     int totalOptions; // 選項的總數
     int nextSceneIndex;
 } Scene;
-
+/*
 char background[100] = "source/image/maldives.bmp";
 char character[100];
 char caption[1000];
+*/
+// void story(int32_t choice ,Scene* scenes);
 
-void story(int32_t choice ,Scene* scenes);
+void load_story(Scene scenes[]);

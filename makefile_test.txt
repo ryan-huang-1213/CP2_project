@@ -1,0 +1,2 @@
+all: 
+	-gcc test.c `sdl2-config --cflags` -Wall -O2  -o sdl_game `sdl2-config --libs` -lSDL2_image -lSDL2_ttf

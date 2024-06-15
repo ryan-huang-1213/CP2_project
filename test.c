@@ -11,16 +11,16 @@
 #define MAX_DIALOGS 4
 
 typedef struct {
-    char* path; // 圖片的相對路徑
+    char* path;
     SDL_Texture* texture;
     SDL_Rect rect;
 } Asset;
 
 typedef struct {
-    char* text; // 選項的文字敘述 
+    char* text;
     SDL_Texture* texture;
     SDL_Rect rect;
-    int nextSceneIndex; // 跳轉至下一個頁面 Scene[?]
+    int nextSceneIndex; // 跳轉至下一個頁面
 } Option;
 
 typedef struct {
@@ -32,7 +32,6 @@ typedef struct {
     int totalCharacters; // 出現角色的總數
     Option* options; // 指向該對話應該顯示的選項
     int totalOptions; // 該對話應該顯示的選項數量
-    char* speaker;
 } Dialog;
 
 typedef struct {
@@ -46,15 +45,7 @@ typedef struct {
     int currentBackgroundIndex;
     Option* options; // 新增選項
     int totalOptions; // 選項的總數
-    int nextSceneIndex;
 } Scene;
-
-// 新增一個結構來表示背包
-typedef struct {
-    bool visible; // 背包是否可見
-    SDL_Rect rect; // 背包的矩形區域
-    // 可以添加更多背包相關的屬性，如道具列表等
-} Backpack;
 
 // 函式宣告
 bool initSDL(SDL_Window** window, SDL_Renderer** renderer);
@@ -68,9 +59,6 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = NULL;
     SDL_Renderer* renderer = NULL;
     TTF_Font* font = NULL;
-
-    // 後端修改區 開始 
-
     Scene scenes[MAX_SCENES] = {
         {
             (Asset[2]){
@@ -148,23 +136,11 @@ int main(int argc, char* argv[]) {
     scenes[2].dialogs[0].at_background = 0; // 第一個對話對應第一張背景圖
     scenes[2].dialogs[1].at_background = 1; // 第二個對話對應第二張背景圖
 
-    scenes[0].nextSceneIndex = 1;
-    scenes[1].nextSceneIndex = 0;
-    scenes[2].nextSceneIndex = 0;
-
     // 設置角色的位置
     scenes[0].characters[0].rect.x = 0; // 角色出現在視窗的左側
     scenes[0].characters[0].rect.y = WINDOW_HEIGHT * 0.3; // 根據需要調整 y 值
     scenes[0].characters[0].rect.w = 250;
     scenes[0].characters[0].rect.h = 450;
-
-    Backpack backpack;
-    backpack.visible = false; // 預設背包不可見
-    // 設置背包的矩形區域為視窗的 80%
-    backpack.rect.x = WINDOW_WIDTH * 0.1; // 起始於視窗寬度的 10%
-    backpack.rect.y = WINDOW_HEIGHT * 0.1; // 起始於視窗高度的 10%
-    backpack.rect.w = WINDOW_WIDTH * 0.8; // 寬度為視窗的 80%
-    backpack.rect.h = WINDOW_HEIGHT * 0.8; // 高度為視窗的 80%
 
     // 初始化選項
     Option options[] = {
@@ -174,10 +150,8 @@ int main(int argc, char* argv[]) {
     int totalOptions = sizeof(options) / sizeof(options[0]);
 
     // 將選項與對話關聯
-    scenes[0].dialogs[2].options = options;
-    scenes[0].dialogs[2].totalOptions = totalOptions;
-
-    // 後端修改區 結束
+    scenes[0].dialogs[3].options = options;
+    scenes[0].dialogs[3].totalOptions = totalOptions;
 
     int currentSceneIndex = 0;
 
@@ -379,7 +353,7 @@ void render(SDL_Renderer* renderer, Scene scenes[], int currentSceneIndex) {
 
     // 渲染對話文本
     SDL_RenderCopy(renderer, currentDialog->texture, NULL, &currentDialog->rect);
-    
+
     SDL_RenderPresent(renderer);
 }
 
@@ -416,7 +390,7 @@ void render(SDL_Renderer* renderer, Scene scenes[], int currentSceneIndex) {
     SDL_RenderPresent(renderer);
 }
 */
-/*
+
 void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes) {
     while (SDL_PollEvent(e) != 0) {
         if (e->type == SDL_QUIT) {
@@ -447,81 +421,8 @@ void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene sce
                     scenes[*currentSceneIndex].currentDialogIndex = 0;
                     // 更新場景的背景索引
                     scenes[*currentSceneIndex].currentBackgroundIndex = scenes[*currentSceneIndex].dialogs[0].at_background;
-                    // 更新下一個場景索引
-                    scenes[*currentSceneIndex].nextSceneIndex = currentDialog->options[i].nextSceneIndex;
-                }
-            }
-
-            // 檢查對話是否結束並更新場景
-            Scene* currentScene = &scenes[*currentSceneIndex];
-            if (currentScene->currentDialogIndex >= currentScene->totalDialogs - 1) {
-                // 如果當前對話是場景中的最後一個，則跳轉到下一個場景
-                *currentSceneIndex = currentScene->nextSceneIndex;
-                currentScene->currentDialogIndex = 0; // 重置對話索引
-                currentScene->currentBackgroundIndex = scenes[*currentSceneIndex].dialogs[0].at_background; // 更新背景
-            }
-        }
-    }
-}
-*/
-void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes) {
-    while (SDL_PollEvent(e) != 0) {
-        if (e->type == SDL_QUIT) {
-            *running = false;
-        } else if (e->type == SDL_MOUSEBUTTONDOWN) {
-            int x, y;
-            SDL_GetMouseState(&x, &y);
-            Scene* currentScene = &scenes[*currentSceneIndex];
-            Dialog* currentDialog = &currentScene->dialogs[currentScene->currentDialogIndex];
-
-            // 檢查是否點擊了選項
-            for (int i = 0; i < currentDialog->totalOptions; i++) {
-                SDL_Rect optionRect = currentDialog->options[i].rect;
-                if (x >= optionRect.x && x <= (optionRect.x + optionRect.w) &&
-                    y >= optionRect.y && y <= (optionRect.y + optionRect.h)) {
-                    // 僅更新下一個場景索引，不立即切換場景
-                    currentScene->nextSceneIndex = currentDialog->options[i].nextSceneIndex;
-                    currentScene->currentDialogIndex++;
-                    
-                    // 如果對話所屬的背景和當前的不同，則需要切換背景
-                    if (currentDialog->at_background != currentScene->currentBackgroundIndex) {
-                        currentScene->currentBackgroundIndex = currentDialog->at_background;
-                    }
-                    // 如果是場景中的最後一句對話，則切換到下一個場景
-                    if (currentScene->currentDialogIndex >= currentScene->totalDialogs) {
-                        *currentSceneIndex = currentScene->nextSceneIndex;
-                        currentScene = &scenes[*currentSceneIndex];
-                        currentScene->currentDialogIndex = 0;
-                        currentScene->currentBackgroundIndex = currentScene->dialogs[0].at_background;
-                    }
-                }
-            }
-            if(currentDialog->totalOptions == 0){
-                // 檢查是否點擊了對話區域並更新對話索引
-                if (y > WINDOW_HEIGHT - DIALOG_HEIGHT) {
-                    currentScene->currentDialogIndex++;
-                    // 如果對話所屬的背景和當前的不同，則需要切換背景
-                    if (currentDialog->at_background != currentScene->currentBackgroundIndex) {
-                        currentScene->currentBackgroundIndex = currentDialog->at_background;
-                    }
-                    // 如果是場景中的最後一句對話，則切換到下一個場景
-                    if (currentScene->currentDialogIndex >= currentScene->totalDialogs) {
-                        *currentSceneIndex = currentScene->nextSceneIndex;
-                        currentScene = &scenes[*currentSceneIndex];
-                        currentScene->currentDialogIndex = 0;
-                        currentScene->currentBackgroundIndex = currentScene->dialogs[0].at_background;
-                    }
                 }
             }
         }
-        /*
-        if(e->type == SDL_KEYDOWN){
-            switch (e->key.keysym.sym) {
-                case SDLK_b:
-                    backpack->visible = !backpack->visible; // 切換背包的可見狀態
-                    break;
-            }
-        }
-        */
     }
 }
