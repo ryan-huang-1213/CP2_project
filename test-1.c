@@ -12,6 +12,7 @@ bool loadMedia(SDL_Renderer* renderer, Scene scenes[], TTF_Font** font);
 void render(SDL_Renderer* renderer, Scene scenes[], int currentSceneIndex, TTF_Font* font);
 void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes);
 void updateDialogTexture(SDL_Renderer* renderer, TTF_Font* font, Dialog* dialog);
+void printDialogText(const char* dialogText);
 
 int main(int argc, char* argv[]) {
     SDL_Window* window = NULL;
@@ -126,7 +127,7 @@ bool loadMedia(SDL_Renderer* renderer, Scene scenes[], TTF_Font** font) {
     }
     printf("ttf loaded \n");
     // 加載每個場景的媒體
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 33; i++) {
         Scene* scene = &scenes[i];
         // 加載背景圖片
         for (int j = 0; j < scene->totalBackgrounds; j++) {

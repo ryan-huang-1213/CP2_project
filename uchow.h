@@ -22,7 +22,7 @@ typedef struct _backpack
 
 typedef struct _like
 {
-    int32_t Don;
+    int32_t on;
     int32_t Becca;
     int32_t Street;
     int32_t Police;

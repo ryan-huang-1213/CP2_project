@@ -59,7 +59,7 @@ void story(int32_t choice,Scene* scenes)
 
             Option options[] =
             {
-                {"(1)馬上告訴警長自己的猜:連續殺人犯很有可能是對長捲髮有執念，且昨天載Becca回去的男朋友很可疑!", NULL, {WINDOW_WIDTH - 300, 100, 200, 50}, 17},
+                {"(1)馬上告訴警長自己的猜想:連續殺人犯很有可能是對長捲髮有執念，且昨天載Becca回去的男朋友很可疑!", NULL, {WINDOW_WIDTH - 300, 100, 200, 50}, 17},
                 {"(2)趕快離開並偷偷去找東哥請求他的幫助", NULL, {WINDOW_WIDTH - 300, 200, 200, 50}, 18}
             };
             int totalOptions = sizeof(options) / sizeof(options[0]);
