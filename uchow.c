@@ -548,7 +548,7 @@ void load_story(Scene scenes[]) {
     // 為 characters 動態分配記憶體
     scenes[story].characters = (Asset*)calloc(1 , sizeof(Asset));
     if (scenes[story].characters != NULL) {
-        scenes[story].characters[0] = (Asset){"source/character/受害者的家人.jpg", NULL, {0, 200, 250, 400}};
+        scenes[story].characters[0] = (Asset){"source/character/受害者的家人.jpg", NULL, {0, 200, 320, 400}};
         scenes[story].totalCharacters = 1;
     }
 
@@ -645,7 +645,7 @@ void load_story(Scene scenes[]) {
     // 為 characters 動態分配記憶體
     scenes[story].characters = (Asset*)calloc(1 , sizeof(Asset));
     if (scenes[story].characters != NULL) {
-        scenes[story].characters[0] = (Asset){"source/character/法醫.jpg", NULL, {0, 200, 250, 400}};
+        scenes[story].characters[0] = (Asset){"source/character/法醫.jpg", NULL, {0, 200, 300, 400}};
         scenes[story].totalCharacters = 1;
     }
 
@@ -908,7 +908,7 @@ void load_story(Scene scenes[]) {
     // 為 dialogs 動態分配記憶體
     scenes[story].dialogs = (Dialog*)calloc( 2 , sizeof(Dialog));
     if (scenes[story].dialogs != NULL) {
-        scenes[story].dialogs[0] = (Dialog){"來到教學區，你發現因為現在下課了，附近空無一人，但地上有一副遺落的藍芽耳機，打開後發現他的名稱是Becca\n 獲得道具 : Becca 的藍芽耳機 <backpack airpod 1>", NULL, {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT}, 0, NULL, 0, NULL, 0, NULL};
+        scenes[story].dialogs[0] = (Dialog){"來到教學區，你發現因為現在下課了，附近空無一人，但地上有一副遺落的藍芽耳機，打開後發現他的名稱是Becca\n 獲得道具 : Becca 的藍芽耳機 <backpack airpods 1>", NULL, {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT}, 0, NULL, 0, NULL, 0, NULL};
         scenes[story].dialogs[1] = (Dialog){"撿起來後你決定...", NULL, {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT}, 0, NULL, 0, NULL, 0, NULL};
         scenes[story].totalDialogs = 2;
     }
@@ -963,6 +963,7 @@ void load_story(Scene scenes[]) {
     if(scenes[story].options != NULL){
         scenes[story].options[0] = (Option){"(1)最近關於連續殺人嫌犯，你有聽到什麼消息嗎?\n",NULL,{WINDOW_WIDTH-400, WINDOW_HEIGHT - DIALOG_HEIGHT - 170, 400, 50},23};
         scenes[story].options[1] = (Option){"(2)你的名字很好聽",NULL,{WINDOW_WIDTH-400, WINDOW_HEIGHT - DIALOG_HEIGHT - 120, 400, 50},24};
+        scenes[story].totalOptions = 2;
     }
     scenes[story].dialogs[0].options = scenes[story].options;
     scenes[story].dialogs[0].totalOptions = 2;
@@ -1565,7 +1566,7 @@ void load_story(Scene scenes[]) {
     }
     scenes[story].currentDialogIndex = 0;
     scenes[story].currentBackgroundIndex = 0;
-    scenes[story].nextSceneIndex = 0; // end game 
+    scenes[story].nextSceneIndex = 1; // end game 
     // Becca = 1;
 
     scenes[story].options = (Option*)calloc(2 , sizeof(Option));
@@ -1628,7 +1629,7 @@ void load_story(Scene scenes[]) {
     // 為 dialogs 動態分配記憶體
     scenes[story].dialogs = (Dialog*)calloc(1 , sizeof(Dialog));
     if (scenes[story].dialogs != NULL) {
-        scenes[story].dialogs[0] = (Dialog){"接下來你決定來到警局尋求當地警察的幫助。\n這時有一個警員火急火燎的衝進辦公室，大喊連環殺人魔又下手了，而受害者的照片赫然是Becca!", NULL, {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT}, 0, scenes[story].characters, 1, NULL, 0, NULL};
+        scenes[story].dialogs[0] = (Dialog){"接下來你決定來到警局尋求當地警察的幫助。\n這時有一個警員火急火燎的衝進辦公室，大喊連環殺人魔又下手了，而受害者的照片赫然是Becca!", NULL, {0, WINDOW_HEIGHT - DIALOG_HEIGHT, WINDOW_WIDTH, DIALOG_HEIGHT}, 0, NULL, 0, NULL, 0, NULL};
         scenes[story].totalDialogs = 1;
     }
     scenes[story].currentDialogIndex = 0;

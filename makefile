@@ -1,6 +1,6 @@
 CC := gcc
 CFLAGS := $(shell sdl2-config --cflags) -Wall -O2
-LDFLAGS := $(shell sdl2-config --libs) -lSDL2_image -lSDL2_ttf
+LDFLAGS := $(shell sdl2-config --libs) -lSDL2_image -lSDL2_ttf -lSDL2_mixer
 
 TARGET := sdl_game
 SRC := new.c

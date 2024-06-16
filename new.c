@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <SDL_mixer.h>
 #include "uchow.h"
 
 // 函式宣告
@@ -25,6 +26,122 @@ void handleDialogTags(char* dialogText, Like likes[], int totalLikes, Backpack* 
 void transitionEffect(SDL_Renderer* renderer, SDL_Texture* currentTexture, SDL_Texture* nextTexture, int transitionTime);
 
 bool load = false;
+// 全局變量
+Mix_Music* music = NULL;
+Mix_Music* endMusic = NULL;
+Mix_Music* startMusic = NULL;
+Mix_Chunk* backpackOpenSound = NULL;
+Mix_Chunk* dialogChangeSound = NULL;
+
+bool initSounds() {
+    // 初始化SDL_mixer
+    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 4096) != 0) {
+        SDL_Log("Mix_OpenAudio failed: %s", Mix_GetError());
+        return false;
+    }
+
+    // 加載對話切換音效
+    dialogChangeSound = Mix_LoadWAV("source/music/對話切換.wav");
+    if (!dialogChangeSound) {
+        SDL_Log("Mix_LoadWAV failed: %s", Mix_GetError());
+        return false;
+    }
+
+    // 加載開包包音效
+    backpackOpenSound = Mix_LoadWAV("source/music/開包包.wav");
+    if (!backpackOpenSound) {
+        SDL_Log("Mix_LoadWAV failed: %s", Mix_GetError());
+        return false;
+    }
+
+    printf("loaded \n");
+    return true;
+}
+
+/*
+bool initAudioAndPlayDialogChangeSound(const char* musicPath) {
+    // 初始化SDL_mixer
+    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 4096) != 0) {
+        SDL_Log("Mix_OpenAudio failed: %s", Mix_GetError());
+        return false;
+    }
+
+    // 加載音樂
+    Mix_Music *dialogChangeSound = Mix_LoadMUS(musicPath);
+    if (!dialogChangeSound) {
+        SDL_Log("Mix_LoadMUS failed: %s", Mix_GetError());
+        Mix_CloseAudio();
+        return false;
+    }
+
+    // 播放音樂
+    if (Mix_PlayMusic(dialogChangeSound, -1) == -1) {
+        SDL_Log("Mix_PlayMusic failed: %s", Mix_GetError());
+        Mix_FreeMusic(dialogChangeSound);
+        Mix_CloseAudio();
+        return false;
+    }
+
+    return true;
+}
+
+bool initAudioAndPlayBackpackOpenSound(const char* musicPath) {
+    // 初始化SDL_mixer
+    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 4096) != 0) {
+        SDL_Log("Mix_OpenAudio failed: %s", Mix_GetError());
+        return false;
+    }
+
+    // 加載音樂
+    Mix_Music *backpackOpenSound = Mix_LoadMUS(musicPath);
+    if (!backpackOpenSound) {
+        SDL_Log("Mix_LoadMUS failed: %s", Mix_GetError());
+        Mix_CloseAudio();
+        return false;
+    }
+
+    // 播放音樂
+    if (Mix_PlayMusic(backpackOpenSound, -1) == -1) {
+        SDL_Log("Mix_PlayMusic failed: %s", Mix_GetError());
+        Mix_FreeMusic(backpackOpenSound);
+        Mix_CloseAudio();
+        return false;
+    }
+
+    return true;
+}
+*/
+bool initAudioAndPlayMusic(const char* musicPath) {
+    // 初始化SDL_mixer
+    if (Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 4096) != 0) {
+        SDL_Log("Mix_OpenAudio failed: %s", Mix_GetError());
+        return false;
+    }
+
+    // 加載音樂
+    Mix_Music *music = Mix_LoadMUS(musicPath);
+    if (!music) {
+        SDL_Log("Mix_LoadMUS failed: %s", Mix_GetError());
+        Mix_CloseAudio();
+        return false;
+    }
+
+    // 播放音樂
+    if (Mix_PlayMusic(music, -1) == -1) {
+        SDL_Log("Mix_PlayMusic failed: %s", Mix_GetError());
+        Mix_FreeMusic(music);
+        Mix_CloseAudio();
+        return false;
+    }
+
+    return true;
+}
+
+// 程序結束前釋放音效資源
+void closeSounds() {
+    Mix_FreeChunk(backpackOpenSound);
+    Mix_FreeChunk(dialogChangeSound);
+}
 
 int main(int argc, char* argv[]) {
     SDL_Window* window = NULL;
@@ -51,9 +168,16 @@ int main(int argc, char* argv[]) {
 
     int currentSceneIndex = -1;
 
+    initSounds();
+
     if (!initSDL(&window, &renderer)) {
         printf("Failed to initialize!\n");
     } else {
+        // 在開始畫面加入音樂
+        if (!initAudioAndPlayMusic("source/music/開始.mp3")) {
+            SDL_Log("Failed to initialize audio and play music");
+            return -1;
+        }
         if (!loadMedia(renderer, scenes, &font, &backpackItems,fontSize)) {
             printf("Failed to load media!\n");
         } else {
@@ -68,6 +192,10 @@ int main(int argc, char* argv[]) {
             }
             currentSceneIndex = 0;
             loadMedia(renderer, scenes, &font, &backpackItems,fontSize);
+            // 清理音樂資源
+            Mix_HaltMusic();
+            Mix_FreeMusic(music);
+            Mix_CloseAudio();
             // 遊戲主循環
             while (running) {
                 handleEvents(&e, &running, &currentSceneIndex, scenes, MAX_SCENES, &backpackVisible, renderer, backpackItems, font, &gameState);
@@ -79,6 +207,10 @@ int main(int argc, char* argv[]) {
     }
 
     // closeSDL(window, renderer, scenes, font, MAX_SCENES);
+    // 清理音樂資源
+    // Mix_HaltMusic();
+    // Mix_FreeMusic(music);
+    // Mix_CloseAudio();
     return 0;
 }
 /*
@@ -217,7 +349,7 @@ bool showStartScreen(SDL_Renderer* renderer, TTF_Font** font, GameState* gameSta
     SDL_Event e;
     SDL_Texture* startScreenTexture = IMG_LoadTexture(renderer, "source/image/開始.jpg");
     SDL_Rect startButtonRect = {100, 100, 200, 50}; // 假設按鈕位置和尺寸
-    SDL_Rect fontSizeButtonRect = {100, 200, 50, 50}; // 字體大小按鈕位置和尺寸
+    SDL_Rect fontSizeButtonRect = {350, 100, 50, 50}; // 字體大小按鈕位置和尺寸
     const char* fontSizeTexts[] = {"大", "中", "小"};
     int currentFontSizeIndex = 1; // 預設為中
 
@@ -402,8 +534,7 @@ bool loadMedia(SDL_Renderer* renderer, Scene scenes[], TTF_Font** font, Backpack
         }
         printf("backpack loaded\n");
     }
-    
-    
+
     // 加載每個場景的媒體
     for (int i = 0; i < MAX_SCENES; i++) {
         Scene* scene = &scenes[i];
@@ -595,9 +726,9 @@ void updateOptionTexture(SDL_Renderer* renderer, TTF_Font* font, Option* option)
 
 // 假設您在 main 函數或其他初始化函數中這樣做
 Like likes[] = {
-    {"Becca", 2, 3},
-    {"Police", 5, 3},
-    {"Street", 8, 3}
+    {"Becca", 0, 3},
+    {"Police", 0, 3},
+    {"Street", 0, 3}
 };
 const int totalLikes = sizeof(likes) / sizeof(likes[0]);
 
@@ -663,8 +794,10 @@ void render(SDL_Renderer* renderer, Scene scenes[], int currentSceneIndex, TTF_F
             char likeText[1024] = "";
             for (int i = 0; i < totalLikes; i++) {
                 char line[256];
-                sprintf(line, "%s : %d \n", &likes[i].name[0], likes[i].value);
-                strcat(likeText, line);
+                if(likes[i].value>0){
+                    sprintf(line, "%s : %d \n", &likes[i].name[0], likes[i].value);
+                    strcat(likeText, line);
+                }
             }
 
             SDL_Surface* textSurface = TTF_RenderUTF8_Blended_Wrapped(font, likeText, textColor, WINDOW_WIDTH);
@@ -760,7 +893,6 @@ void handleDialogTags(char* dialogText, Like likes[], int totalLikes, Backpack* 
     }
 }
 
-
 void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes, bool* backpackVisible, SDL_Renderer* renderer, Backpack* backpackItems, TTF_Font* font, GameState* gameState) {
     while (SDL_PollEvent(e) != 0) {
         // 檢查是否需要顯示開始畫面
@@ -777,6 +909,11 @@ void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene sce
         if (e->type == SDL_QUIT) {
             *running = false;
         } else if (e->type == SDL_KEYDOWN && e->key.keysym.sym == SDLK_b) {
+            // 播放開包包音效
+            if (backpackOpenSound != NULL) {
+                Mix_PlayChannel(-1, backpackOpenSound, 0);
+            }
+            SDL_Delay(500);
             // 切換背包顯示狀態
             toggleBackpackDisplay(backpackVisible, renderer, backpackItems);
         } else if (e->type == SDL_MOUSEBUTTONDOWN) {
@@ -787,7 +924,10 @@ void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene sce
             Dialog* currentDialog = &scenes[*currentSceneIndex].dialogs[scenes[*currentSceneIndex].currentDialogIndex];
             handleDialogTags(currentDialog->text, likes, totalLikes, backpackItems);
             // 檢查是否點擊了對話區域
-            if (!*backpackVisible && y > WINDOW_HEIGHT - DIALOG_HEIGHT) {
+            if (!*backpackVisible && y > WINDOW_HEIGHT - DIALOG_HEIGHT && currentDialog->totalOptions == 0) {
+                if (dialogChangeSound != NULL) {
+                    Mix_PlayChannel(-1, dialogChangeSound, 0); // 播放1秒
+                }
                 if(scenes[*currentSceneIndex].currentDialogIndex == scenes[*currentSceneIndex].totalDialogs-1){
                     // printf("flag\n");
                     *currentSceneIndex = scenes[*currentSceneIndex].nextSceneIndex;
@@ -807,11 +947,14 @@ void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene sce
                     SDL_Rect optionRect = currentDialog->options[i].rect;
                     if (x >= optionRect.x && x <= (optionRect.x + optionRect.w) &&
                         y >= optionRect.y && y <= (optionRect.y + optionRect.h)) {
+                        if (dialogChangeSound != NULL) {
+                            Mix_PlayChannelTimed(-1, dialogChangeSound, 0, 1000); // 播放1秒
+                        }
                         // 更新場景索引前進行轉場效果
                         int nextSceneIndex = currentDialog->options[i].nextSceneIndex;
                         SDL_Texture* currentTexture = scenes[*currentSceneIndex].backgrounds[0].texture;
                         SDL_Texture* nextTexture = scenes[nextSceneIndex].backgrounds[0].texture;
-                        transitionEffect(renderer, currentTexture, nextTexture, 1000); // 1秒的轉場
+                        transitionEffect(renderer, currentTexture, nextTexture, 500);
                         // 更新場景索引
                         printf("切換至 %d \n",currentDialog->options[i].nextSceneIndex);
                         *currentSceneIndex = currentDialog->options[i].nextSceneIndex;
@@ -822,18 +965,58 @@ void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene sce
                         // 更新場景的背景索引
                         scenes[*currentSceneIndex].currentBackgroundIndex = scenes[*currentSceneIndex].dialogs[0].at_background;
                         
+                        
                         // 由於場景已經改變，跳出選項檢查循環
                         break;
                     }
                 }
             }
-
-            
             // 如果背包可見，則檢查滑鼠是否靠近任何道具圖片
             if (*backpackVisible) {
                 displayItemDescription(renderer, font, x, y, backpackItems);
             }
-            
+            // 新增播放音樂的功能
+            if (*currentSceneIndex == 39) {
+                // 播放勝利音樂
+                static Mix_Music* victoryMusic = NULL;
+                if (!victoryMusic) {
+                    victoryMusic = Mix_LoadMUS("source/music/勝利.mp3");
+                    if (!victoryMusic) {
+                        SDL_Log("Mix_LoadMUS failed: %s", Mix_GetError());
+                    }
+                }
+                if (victoryMusic && Mix_PlayingMusic() == 0) {
+                    Mix_PlayMusic(victoryMusic, 1); // 播放一次
+                }
+            } else if (*currentSceneIndex == 37 || *currentSceneIndex == 38) {
+                // 播放失敗音樂
+                static Mix_Music* failureMusic = NULL;
+                if (!failureMusic) {
+                    failureMusic = Mix_LoadMUS("source/music/失敗.mp3");
+                    if (!failureMusic) {
+                        SDL_Log("Mix_LoadMUS failed: %s", Mix_GetError());
+                    }
+                }
+                if (failureMusic && Mix_PlayingMusic() == 0) {
+                    Mix_PlayMusic(failureMusic, 1); // 播放一次
+                }
+            }
+
+            // 確保在場景變更時停止當前音樂
+            if (*currentSceneIndex != 39 && Mix_PlayingMusic() == 1) {
+                if (Mix_FadeOutMusic(5000) == 0) { // 延長漸出時間到 5000 毫秒
+                    Mix_HaltMusic();
+                    // Mix_FreeMusic(victoryMusic);
+                    // victoryMusic = NULL;
+                }
+            }
+            if ((*currentSceneIndex != 37 && *currentSceneIndex != 38) && Mix_PlayingMusic() == 1) {
+                if (Mix_FadeOutMusic(5000) == 0) { // 延長漸出時間到 5000 毫秒
+                    Mix_HaltMusic();
+                    // Mix_FreeMusic(failureMusic);
+                    // failureMusic = NULL;
+                }
+            }
         }
     }
 }
@@ -843,21 +1026,46 @@ void transitionEffect(SDL_Renderer* renderer, SDL_Texture* currentTexture, SDL_T
     SDL_SetTextureAlphaMod(currentTexture, 255);
     SDL_SetTextureAlphaMod(nextTexture, 0);
 
-    // 計算每一步的透明度變化量
-    int alphaStep = 255 / (transitionTime / 10); // 假設每10毫秒更新一次
+    // 創建一個黑色的紋理
+    SDL_Texture* blackTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, WINDOW_WIDTH, WINDOW_HEIGHT);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // 黑色
+    SDL_SetRenderTarget(renderer, blackTexture);
+    SDL_RenderClear(renderer);
+    SDL_SetRenderTarget(renderer, NULL);
 
-    // 逐漸減少當前場景的透明度，增加下一個場景的透明度
-    for (int alpha = 255; alpha >= 0; alpha -= alphaStep) {
+    // 計算每一步的透明度變化量
+    float alphaStep = 255.0f / (transitionTime / 20.0f); // 假設每20毫秒更新一次
+
+    // 首先將當前場景淡出到黑色
+    for (float alpha = 255.0f; alpha >= 0.0f; alpha -= alphaStep) {
         // 設置當前場景的透明度
-        SDL_SetTextureAlphaMod(currentTexture, alpha);
-        // 設置下一個場景的透明度
-        SDL_SetTextureAlphaMod(nextTexture, 255 - alpha);
+        SDL_SetTextureAlphaMod(currentTexture, (Uint8)alpha);
 
         // 清除畫面
         SDL_RenderClear(renderer);
 
         // 渲染當前場景
         SDL_RenderCopy(renderer, currentTexture, NULL, NULL);
+        // 渲染黑色覆蓋層
+        SDL_RenderCopy(renderer, blackTexture, NULL, NULL);
+
+        // 更新畫面
+        SDL_RenderPresent(renderer);
+
+        // 等待一段時間
+        SDL_Delay(20);
+    }
+
+    // 然後將下一個場景從黑色淡入
+    for (float alpha = 0.0f; alpha <= 255.0f; alpha += alphaStep) {
+        // 設置下一個場景的透明度
+        SDL_SetTextureAlphaMod(nextTexture, (Uint8)alpha);
+
+        // 清除畫面
+        SDL_RenderClear(renderer);
+
+        // 先渲染黑色覆蓋層
+        SDL_RenderCopy(renderer, blackTexture, NULL, NULL);
         // 渲染下一個場景
         SDL_RenderCopy(renderer, nextTexture, NULL, NULL);
 
@@ -865,9 +1073,13 @@ void transitionEffect(SDL_Renderer* renderer, SDL_Texture* currentTexture, SDL_T
         SDL_RenderPresent(renderer);
 
         // 等待一段時間
-        SDL_Delay(10);
+        SDL_Delay(20);
     }
+
+    // 釋放黑色紋理資源
+    SDL_DestroyTexture(blackTexture);
 }
+
 /*
 void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes, bool* backpackVisible, SDL_Renderer* renderer, Backpack* backpackItems, TTF_Font* font, GameState* gameState) {
     while (SDL_PollEvent(e) != 0) {
