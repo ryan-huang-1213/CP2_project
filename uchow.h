@@ -9,25 +9,32 @@
 #define WINDOW_HEIGHT 900
 #define DIALOG_HEIGHT (WINDOW_HEIGHT / 3) // 對話按鈕的高度
 #define TEXT_PATH "source/text/cjkfonts_handingwriting4.ttf"
-#define MAX_SCENES 50
+#define MAX_SCENES 43
 #define MAX_DIALOGS 10
+#define MAX_ITEMS 4
 
-typedef struct _backpack
-{
-    int32_t nopicture;
-    int32_t picture;
-    int32_t airpods;
-    int32_t donpaper;
+typedef enum {
+    GAME_STATE_START_SCREEN,
+    GAME_STATE_RUNNING,
+    GAME_STATE_END_SCREEN
+} GameState;
+
+typedef struct _backpack {
+    char itemName[256];
+    char itemImagePath[256]; // 道具圖片的路徑
+    char itemDescriptionPath[256]; // 道具描述文本的路徑
+    int totalItems;
+    int have;
+    SDL_Texture* itemTexture; // 道具圖片的紋理
+    SDL_Rect itemRect; // 道具圖片的矩形區域
 } Backpack;
 
-typedef struct _like
-{
-    int32_t on;
-    int32_t Becca;
-    int32_t Street;
-    int32_t Police;
-    int32_t girl;
-}Like;
+typedef struct _like {
+    char name[256];
+    int32_t value;
+    int32_t totalLike; // 新增的欄位
+} Like;
+
 /*
 Like like;
 Backpack backpack;
@@ -85,3 +92,4 @@ char caption[1000];
 // void story(int32_t choice ,Scene* scenes);
 
 void load_story(Scene scenes[]);
+void loadFromFile(const char *filename, Scene scenes[], int *totalScenes);

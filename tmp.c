@@ -50,7 +50,7 @@ void story(int32_t choice,Scene* scenes)
         printf("    小亮，女性，23歲，服務員，長捲髮\n");
         
             printf("警長好感+2\n");
-            like.Police += 2;
+            likes.Police += 2;
         */
         if(Becca == 1)
         {
@@ -116,10 +116,10 @@ void story(int32_t choice,Scene* scenes)
     {
         strncpy(background, "picture/麵攤.jpg", 1000);
         strncpy(character1, "picture/東哥.png", 1000);
-        strncpy(caption,  "流浪漢感激地看了你一眼，開始狼吞虎嚥，這時你才發現它少了一條右臂， 你決定...", 1000);
+        strncpy(caption,  "流浪漢感激地看了你一眼，開始狼吞虎嚥，這時你才發現它少了一條右臂，你決定...", 1000);
         /*
             printf("流浪看好感+3\n");
-            like.Street += 3;
+            likes.Street += 3;
         */
         Option options[] =
         {
@@ -145,8 +145,8 @@ void story(int32_t choice,Scene* scenes)
             /*
                 printf("東哥好感+2\n");
                 printf("Becca好感+1\n");
-                like.Don += 2;
-                like.Becca += 1;
+                likes.Don += 2;
+                likes.Becca += 1;
                 printf("離開之前，東哥偷偷遞給你一張紙條，上面寫著:有事第一個找我。\n");
                 printf("獲得道具:東哥的紙條\n");
                 backpack.donpaper +=1;
@@ -170,7 +170,7 @@ void story(int32_t choice,Scene* scenes)
         {
             /*
             printf("東哥好感+2\n");
-            like.Don += 2;
+            likes.Don += 2;
             */
             strncpy(caption,  "很快地結束飯局，你回到租屋處整理資料。", 1000);
 
@@ -194,7 +194,7 @@ void story(int32_t choice,Scene* scenes)
         strncpy(caption,  "他看了你一眼，輕描淡寫的帶過了。", 1000);
         /*
         printf("流浪漢好感-1\n");
-        like.Street -= 1;
+        likes.Street -= 1;
         */
         strncpy(caption,  "很快地結束飯局，你回到租屋處整理資料。", 1000);
         choice = 8;
@@ -214,7 +214,7 @@ void story(int32_t choice,Scene* scenes)
         strncpy(caption,  "他開始狼吞虎嚥，這時你才發現它少了一條右臂，你決定..\n", 1000);
         /*
             printf("流浪看好感+2\n");
-            like.Street += 2;
+            likes.Street += 2;
         */
 
         Option options[] =
@@ -240,7 +240,7 @@ void story(int32_t choice,Scene* scenes)
         {
             /*
                 printf("Becca好感+1\n");
-                like.Becca += 1;
+                likes.Becca += 1;
             */
             strncpy(caption,  "很快地結束飯局，Becca的男友來接他離開，秉持著交朋友的態度，你們互 打電話加了號碼。\n回租屋處你累的直接睡了，到了半夜，迷糊中被電話吵醒，看見來電顯示竟然是Becca，你決定...", 1000);
             Option options[] =
@@ -346,7 +346,7 @@ void story(int32_t choice,Scene* scenes)
                 printf("    小亮，女性，23歲，服務員，長捲髮\n");
                 backpack.nopicture += 1;
                 printf("警長好感+1");
-                like.Police += 1;
+                likes.Police += 1;
             }
             */
             strncpy(caption,  "你沒有從中得到任何發現......\n接下來你決定...", 1000);
@@ -373,7 +373,7 @@ void story(int32_t choice,Scene* scenes)
         strncpy(caption,  "你來到生態池，剛好看到一個女孩失足掉進水裡，沒有過多猶豫，你直接上前救援。\n為了感謝你，女孩堅持請你吃飯。", 1000);
         /*
             printf("女孩好感+3\n");
-            like.girl += 3;
+            likes.girl += 3;
         */
 
         strncpy(caption,  "女孩叫做Becca，你們去了一間麵店，發現旁邊有一個流浪漢蹲坐在路邊，看著前面雙眼無神。", 1000);
@@ -405,7 +405,7 @@ void story(int32_t choice,Scene* scenes)
     {
         strncpy(background, "picture/麵攤.jpg", 1000);
         strncpy(character1, "picture/東哥.png", 1000);
-        if(like.Don >= 5)
+        if(likes.Don >= 5)
         {
             strncpy(caption,  "東哥沒多想直接告訴你，其實他的手是被他的好兄弟Kevin砍斷的，因為他撞見了Kevin的殺人現場，逃跑過程被砍斷了一隻手，這些年為了不要被認出，他一直裝做乞丐。然而昨天他發現Becca的男友竟就是Kevin!\n他說Kevin在母親過世後開始有瘋魔的狀態，只要看見長捲髮都會認為母親還在，因此開始不斷找長捲髮的女性下手。\n你很疑惑為什麼東哥不向上舉報，東哥只說了句:Kevin的父親就市警局最德高望重的警長，他會替他掩蓋好一切罪刑並保護他。\n你在此終於得知了真相，但要怎麼對抗警局的勢力又是另外一個故事了。\nYOU WIN!!!", 1000);
             return;
@@ -502,7 +502,7 @@ void story(int32_t choice,Scene* scenes)
         strncpy(caption,  "果然有人來聯絡你，一個叫Becca的女生跟你約在校門口見面。\nBecca表達了對你的感謝，你們也剛好聊了一下。", 1000);
         /*
             printf("Becca好感+2");
-            like.Becca += 2;
+            likes.Becca += 2;
         */
 
         Option options[] =

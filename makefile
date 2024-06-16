@@ -3,8 +3,8 @@ CFLAGS := $(shell sdl2-config --cflags) -Wall -O2
 LDFLAGS := $(shell sdl2-config --libs) -lSDL2_image -lSDL2_ttf
 
 TARGET := sdl_game
-SRC := test-1.c
-OBJ := test-1.o uchow.o
+SRC := new.c
+OBJ := new.o uchow.o
 
 # 編譯 .c 檔案成 .o 檔案
 %.o: %.c
