@@ -11,7 +11,7 @@
 // 函式宣告
 bool initSDL(SDL_Window** window, SDL_Renderer** renderer);
 void closeSDL(SDL_Window* window, SDL_Renderer* renderer, Scene scenes[], TTF_Font* font, int totalScenes);
-bool loadMedia(SDL_Renderer* renderer, Scene scenes[], TTF_Font** font, Backpack** backpackItems);
+bool loadMedia(SDL_Renderer* renderer, Scene scenes[], TTF_Font** font, Backpack** backpackItems, int fontSize);
 void render(SDL_Renderer* renderer, Scene scenes[], int currentSceneIndex, TTF_Font* font, bool backpackVisible, Backpack* backpackItems);
 void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes, bool* backpackVisible, SDL_Renderer* renderer, Backpack* backpackItems, TTF_Font* font, GameState* gameState);
 void updateDialogTexture(SDL_Renderer* renderer, TTF_Font* font, Dialog* dialog, Backpack* backpackItems);
@@ -19,8 +19,10 @@ void printDialogText(const char* dialogText);
 void toggleBackpackDisplay(bool* backpackVisible, SDL_Renderer* renderer, Backpack* backpackItems);
 void loadBackpackItems(Backpack* backpackItems);
 bool displayItemDescription(SDL_Renderer* renderer, TTF_Font* font, int mouseX, int mouseY, Backpack* backpackItems);
-bool showStartScreen(SDL_Renderer* renderer, TTF_Font* font, GameState* gameState);
-// void handleDialogTags(char* dialogText, Like likes[], int totalLikes, Backpack* backpackItems);
+bool showStartScreen(SDL_Renderer* renderer, TTF_Font** font, GameState* gameState, int* fontSize);
+int indexOf(int value, int* array, int size);
+void handleDialogTags(char* dialogText, Like likes[], int totalLikes, Backpack* backpackItems);
+void transitionEffect(SDL_Renderer* renderer, SDL_Texture* currentTexture, SDL_Texture* nextTexture, int transitionTime);
 
 bool load = false;
 
@@ -29,6 +31,7 @@ int main(int argc, char* argv[]) {
     SDL_Renderer* renderer = NULL;
     TTF_Font* font = NULL;
     GameState gameState = GAME_STATE_START_SCREEN;
+    int fontSize = 24;
 
     Scene scenes[50];
     load_story(scenes);
@@ -51,7 +54,7 @@ int main(int argc, char* argv[]) {
     if (!initSDL(&window, &renderer)) {
         printf("Failed to initialize!\n");
     } else {
-        if (!loadMedia(renderer, scenes, &font, &backpackItems)) {
+        if (!loadMedia(renderer, scenes, &font, &backpackItems,fontSize)) {
             printf("Failed to load media!\n");
         } else {
             bool running = true;
@@ -59,11 +62,12 @@ int main(int argc, char* argv[]) {
             printf("start run\n");
             
             // 顯示開始畫面
-            if (!showStartScreen(renderer, font, &gameState)) {
+            if (!showStartScreen(renderer, &font, &gameState,&fontSize)) {
                 closeSDL(window, renderer, scenes, font, MAX_SCENES);
                 return 0;
             }
             currentSceneIndex = 0;
+            loadMedia(renderer, scenes, &font, &backpackItems,fontSize);
             // 遊戲主循環
             while (running) {
                 handleEvents(&e, &running, &currentSceneIndex, scenes, MAX_SCENES, &backpackVisible, renderer, backpackItems, font, &gameState);
@@ -77,12 +81,72 @@ int main(int argc, char* argv[]) {
     // closeSDL(window, renderer, scenes, font, MAX_SCENES);
     return 0;
 }
+/*
+int main(int argc, char* argv[]) {
+    SDL_Window* window = NULL;
+    SDL_Renderer* renderer = NULL;
+    TTF_Font* font = NULL;
+    GameState gameState = GAME_STATE_START_SCREEN;
+    int fontSize = 24; // 預設字體大小
 
-bool showStartScreen(SDL_Renderer* renderer, TTF_Font* font, GameState* gameState) {
+    Scene scenes[50];
+    Backpack* backpackItems = NULL;
+    bool backpackVisible = false;
+    int32_t totalScenes = 0;
+
+    if (!initSDL(&window, &renderer)) {
+        printf("Failed to initialize!\n");
+    } else {
+        // 顯示開始畫面
+        if (!showStartScreen(renderer, &font, &gameState, &fontSize)) {
+            closeSDL(window, renderer, scenes, font, MAX_SCENES);
+            return 0;
+        }
+
+        // 加載故事和背包項目
+        load_story(scenes);
+        loadBackpackItems(backpackItems);
+
+        // 檢查是否有存檔可以加載
+        const char *filename = "test.txt";
+        if (access(filename, F_OK) != -1) {
+            loadFromFile(filename, scenes, &totalScenes);
+        }
+
+        // 加載媒體資源
+        if (!loadMedia(renderer, scenes, &font, &backpackItems, fontSize)) {
+            printf("Failed to load media!\n");
+        } else {
+            int currentSceneIndex = 0;
+            bool running = true;
+            SDL_Event e;
+            printf("start run\n");
+
+            // 遊戲主循環
+            while (running) {
+                handleEvents(&e, &running, &currentSceneIndex, scenes, MAX_SCENES, &backpackVisible, renderer, backpackItems, font, &gameState);
+                if (gameState == GAME_STATE_RUNNING) {
+                    render(renderer, scenes, currentSceneIndex, font, backpackVisible, backpackItems);
+                }
+            }
+        }
+    }
+
+    // 關閉SDL並釋放資源
+    closeSDL(window, renderer, scenes, font, MAX_SCENES);
+    return 0;
+}
+*/
+
+/*
+bool showStartScreen(SDL_Renderer* renderer, TTF_Font** font, GameState* gameState, int* fontSize) {
     bool startGame = false;
     SDL_Event e;
     SDL_Texture* startScreenTexture = IMG_LoadTexture(renderer, "source/image/開始.jpg");
     SDL_Rect startButtonRect = {100, 100, 200, 50}; // 假設按鈕位置和尺寸
+    SDL_Rect fontSizeButtonRect = {100, 200, 200, 50}; // 字體大小按鈕位置和尺寸
+    const char* fontSizeTexts[] = {"大", "中", "小"};
+    int currentFontSizeIndex = 1; // 預設為中
 
     // 渲染開始畫面背景
     SDL_RenderCopy(renderer, startScreenTexture, NULL, NULL);
@@ -93,9 +157,15 @@ bool showStartScreen(SDL_Renderer* renderer, TTF_Font* font, GameState* gameStat
 
     // 渲染按鈕文字
     SDL_Color textColor = {0, 0, 0}; // 黑色文字
-    SDL_Surface* textSurface = TTF_RenderUTF8_Solid(font, "開始遊戲", textColor);
+    SDL_Surface* textSurface = TTF_RenderUTF8_Solid(*font, "開始遊戲", textColor);
     SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
     SDL_RenderCopy(renderer, textTexture, NULL, &startButtonRect);
+
+    // 渲染 "字體大小" 按鈕
+    SDL_RenderFillRect(renderer, &fontSizeButtonRect);
+    SDL_Surface* fontSizeSurface = TTF_RenderUTF8_Solid(*font, fontSizeTexts[currentFontSizeIndex], textColor);
+    SDL_Texture* fontSizeTexture = SDL_CreateTextureFromSurface(renderer, fontSizeSurface);
+    SDL_RenderCopy(renderer, fontSizeTexture, NULL, &fontSizeButtonRect);
 
     SDL_RenderPresent(renderer);
 
@@ -112,6 +182,21 @@ bool showStartScreen(SDL_Renderer* renderer, TTF_Font* font, GameState* gameStat
                     y >= startButtonRect.y && y <= (startButtonRect.y + startButtonRect.h)) {
                     *gameState = GAME_STATE_RUNNING;
                     startGame = true; // 開始遊戲
+                } else if (x >= fontSizeButtonRect.x && x <= (fontSizeButtonRect.x + fontSizeButtonRect.w) &&
+                           y >= fontSizeButtonRect.y && y <= (fontSizeButtonRect.y + fontSizeButtonRect.h)) {
+                    currentFontSizeIndex = (currentFontSizeIndex + 1) % 3; // 切換字體大小
+                    int fontSizes[] = {30, 24, 16};
+                    *fontSize = fontSizes[currentFontSizeIndex];
+                    // 重新加載字體
+                    TTF_CloseFont(*font);
+                    *font = TTF_OpenFont("source/text/cjkfonts_handingwriting4.ttf", *fontSize);
+                    // 更新 "字體大小" 按鈕的文字
+                    SDL_DestroyTexture(fontSizeTexture);
+                    SDL_FreeSurface(fontSizeSurface);
+                    fontSizeSurface = TTF_RenderUTF8_Solid(*font, fontSizeTexts[currentFontSizeIndex], textColor);
+                    fontSizeTexture = SDL_CreateTextureFromSurface(renderer, fontSizeSurface);
+                    SDL_RenderCopy(renderer, fontSizeTexture, NULL, &fontSizeButtonRect);
+                    SDL_RenderPresent(renderer);
                 }
             }
         }
@@ -121,10 +206,99 @@ bool showStartScreen(SDL_Renderer* renderer, TTF_Font* font, GameState* gameStat
     SDL_DestroyTexture(startScreenTexture);
     SDL_DestroyTexture(textTexture);
     SDL_FreeSurface(textSurface);
+    SDL_DestroyTexture(fontSizeTexture);
+    SDL_FreeSurface(fontSizeSurface);
+
+    return (*gameState != GAME_STATE_END_SCREEN);
+}
+*/
+bool showStartScreen(SDL_Renderer* renderer, TTF_Font** font, GameState* gameState, int* fontSize) {
+    bool startGame = false;
+    SDL_Event e;
+    SDL_Texture* startScreenTexture = IMG_LoadTexture(renderer, "source/image/開始.jpg");
+    SDL_Rect startButtonRect = {100, 100, 200, 50}; // 假設按鈕位置和尺寸
+    SDL_Rect fontSizeButtonRect = {100, 200, 50, 50}; // 字體大小按鈕位置和尺寸
+    const char* fontSizeTexts[] = {"大", "中", "小"};
+    int currentFontSizeIndex = 1; // 預設為中
+
+    // 渲染開始畫面背景
+    SDL_RenderCopy(renderer, startScreenTexture, NULL, NULL);
+
+    // 渲染 "開始遊戲" 按鈕
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // 白色按鈕
+    SDL_RenderFillRect(renderer, &startButtonRect);
+
+    // 渲染按鈕文字
+    SDL_Color textColor = {0, 0, 0}; // 黑色文字
+    SDL_Surface* textSurface = TTF_RenderUTF8_Solid(*font, "開始遊戲", textColor);
+    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    SDL_RenderCopy(renderer, textTexture, NULL, &startButtonRect);
+
+    // 渲染 "字體大小" 按鈕
+    SDL_RenderFillRect(renderer, &fontSizeButtonRect);
+    SDL_Surface* fontSizeSurface = TTF_RenderUTF8_Solid(*font, fontSizeTexts[currentFontSizeIndex], textColor);
+    SDL_Texture* fontSizeTexture = SDL_CreateTextureFromSurface(renderer, fontSizeSurface);
+    SDL_RenderCopy(renderer, fontSizeTexture, NULL, &fontSizeButtonRect);
+
+    SDL_RenderPresent(renderer);
+
+    // 處理開始畫面的事件
+    while (!startGame) {
+        while (SDL_PollEvent(&e) != 0) {
+            if (e.type == SDL_QUIT) {
+                *gameState = GAME_STATE_END_SCREEN;
+                startGame = true; // 退出遊戲
+            } else if (e.type == SDL_MOUSEBUTTONDOWN) {
+                int x, y;
+                SDL_GetMouseState(&x, &y);
+                if (x >= startButtonRect.x && x <= (startButtonRect.x + startButtonRect.w) &&
+                    y >= startButtonRect.y && y <= (startButtonRect.y + startButtonRect.h)) {
+                    *gameState = GAME_STATE_RUNNING;
+                    startGame = true; // 開始遊戲
+                } else if (x >= fontSizeButtonRect.x && x <= (fontSizeButtonRect.x + fontSizeButtonRect.w) &&
+                           y >= fontSizeButtonRect.y && y <= (fontSizeButtonRect.y + fontSizeButtonRect.h)) {
+                    currentFontSizeIndex = (currentFontSizeIndex + 1) % 3; // 切換字體大小
+                    const int fontSizes[] = {30, 24, 16};
+                    *fontSize = fontSizes[currentFontSizeIndex];
+                    // 重新加載字體
+                    TTF_CloseFont(*font);
+                    *font = TTF_OpenFont("source/text/cjkfonts_handingwriting4.ttf", *fontSize);
+                    // 清除舊的 "字體大小" 按鈕的文字
+                    SDL_DestroyTexture(fontSizeTexture);
+                    SDL_FreeSurface(fontSizeSurface);
+                    // 重新渲染 "字體大小" 按鈕
+                    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // 白色按鈕
+                    SDL_RenderFillRect(renderer, &fontSizeButtonRect);
+                    // 更新 "字體大小" 按鈕的文字
+                    fontSizeSurface = TTF_RenderUTF8_Solid(*font, fontSizeTexts[currentFontSizeIndex], textColor);
+                    fontSizeTexture = SDL_CreateTextureFromSurface(renderer, fontSizeSurface);
+                    SDL_RenderCopy(renderer, fontSizeTexture, NULL, &fontSizeButtonRect);
+                    // 重新渲染整個畫面
+                    SDL_RenderPresent(renderer);
+                }
+            }
+        }
+    }
+
+    // 釋放資源
+    SDL_DestroyTexture(startScreenTexture);
+    SDL_DestroyTexture(textTexture);
+    SDL_FreeSurface(textSurface);
+    SDL_DestroyTexture(fontSizeTexture);
+    SDL_FreeSurface(fontSizeSurface);
 
     return (*gameState != GAME_STATE_END_SCREEN);
 }
 
+// 輔助函式，用於找出數字在陣列中的索引
+int indexOf(int value, int* array, int size) {
+    for (int i = 0; i < size; i++) {
+        if (array[i] == value) {
+            return i;
+        }
+    }
+    return -1; // 如果找不到，返回-1
+}
 // 初始化 SDL
 bool initSDL(SDL_Window** window, SDL_Renderer** renderer) {
     // 嘗試初始化 SDL 視頻子系統
@@ -182,7 +356,7 @@ void closeSDL(SDL_Window* window, SDL_Renderer* renderer, Scene scenes[], TTF_Fo
     SDL_Quit();
 }
 
-bool loadMedia(SDL_Renderer* renderer, Scene scenes[], TTF_Font** font, Backpack** backpackItems) {
+bool loadMedia(SDL_Renderer* renderer, Scene scenes[], TTF_Font** font, Backpack** backpackItems, int fontSize) {
     // 初始化 PNG 加載
     int imgFlags = IMG_INIT_PNG;
     if (!(IMG_Init(imgFlags) & imgFlags)) {
@@ -198,35 +372,37 @@ bool loadMedia(SDL_Renderer* renderer, Scene scenes[], TTF_Font** font, Backpack
     }
 
     // 打開字體
-    *font = TTF_OpenFont(TEXT_PATH, 24); // 字體大小設為 24px
+    *font = TTF_OpenFont(TEXT_PATH, fontSize); // 字體大小設為 24px
     if (*font == NULL) {
         printf("Failed to load font! SDL_ttf Error: %s\n", TTF_GetError());
         return false;
     }
     printf("ttf loaded \n");
-    
-    // 為背包道具分配記憶體
-    *backpackItems = (Backpack*)malloc(sizeof(Backpack) * 4); // 假設有 4 個道具
-    if (!*backpackItems) {
-        printf("Failed to allocate memory for backpack items.\n");
-        return false;
-    }
-    
-    loadBackpackItems(*backpackItems);
-
-    for (int i = 0; i < 4; i++) {
-        SDL_Surface* loadedSurface = IMG_Load((*backpackItems)[i].itemImagePath);
-        if (loadedSurface == NULL) {
-            printf("Unable to load image %s! SDL_image Error: %s\n", (*backpackItems)[i].itemImagePath, IMG_GetError());
+    if(*backpackItems == NULL){
+        // 為背包道具分配記憶體
+        *backpackItems = (Backpack*)malloc(sizeof(Backpack) * 4); // 假設有 4 個道具
+        if (!*backpackItems) {
+            printf("Failed to allocate memory for backpack items.\n");
             return false;
         }
-        (*backpackItems)[i].itemTexture = SDL_CreateTextureFromSurface(renderer, loadedSurface);
-        SDL_FreeSurface(loadedSurface);
 
-        // 設置道具圖片的矩形區域
-        (*backpackItems)[i].itemRect = (SDL_Rect){260 * i + (WINDOW_WIDTH * 0.2), (WINDOW_HEIGHT * 0.2) , 250, 250}; // 排列道具圖片
+        loadBackpackItems(*backpackItems);
+
+        for (int i = 0; i < MAX_ITEMS; i++) {
+            SDL_Surface* loadedSurface = IMG_Load((*backpackItems)[i].itemImagePath);
+            if (loadedSurface == NULL) {
+                printf("Unable to load image %s! SDL_image Error: %s\n", (*backpackItems)[i].itemImagePath, IMG_GetError());
+                return false;
+            }
+            (*backpackItems)[i].itemTexture = SDL_CreateTextureFromSurface(renderer, loadedSurface);
+            SDL_FreeSurface(loadedSurface);
+
+            // 設置道具圖片的矩形區域
+            (*backpackItems)[i].itemRect = (SDL_Rect){260 * i + (WINDOW_WIDTH * 0.2), (WINDOW_HEIGHT * 0.2) , 250, 250}; // 排列道具圖片
+        }
+        printf("backpack loaded\n");
     }
-    printf("backpack loaded\n");
+    
     
     // 加載每個場景的媒體
     for (int i = 0; i < MAX_SCENES; i++) {
@@ -273,16 +449,16 @@ void loadBackpackItems(Backpack* backpackItems) {
                 char* dot = strrchr(dir->d_name, '.');
                 if (dot && strcmp(dot, ".jpg") == 0) {
                     *dot = '\0'; // 終止文件名，去除擴展名
-                    strcpy(backpackItems[backpackItems->totalItems].itemName, dir->d_name);
-                    strcpy(backpackItems[backpackItems->totalItems].itemImagePath, "./source/tool/");
-                    strcat(backpackItems[backpackItems->totalItems].itemImagePath, dir->d_name);
-                    strcat(backpackItems[backpackItems->totalItems].itemImagePath, ".jpg");
-                    strcpy(backpackItems[backpackItems->totalItems].itemDescriptionPath, "./source/tool/");
-                    strcat(backpackItems[backpackItems->totalItems].itemDescriptionPath, dir->d_name);
-                    strcat(backpackItems[backpackItems->totalItems].itemDescriptionPath, ".txt");
+                    strcpy(backpackItems[backpackItems[0].totalItems].itemName, dir->d_name);
+                    strcpy(backpackItems[backpackItems[0].totalItems].itemImagePath, "./source/tool/");
+                    strcat(backpackItems[backpackItems[0].totalItems].itemImagePath, dir->d_name);
+                    strcat(backpackItems[backpackItems[0].totalItems].itemImagePath, ".jpg");
+                    strcpy(backpackItems[backpackItems[0].totalItems].itemDescriptionPath, "./source/tool/");
+                    strcat(backpackItems[backpackItems[0].totalItems].itemDescriptionPath, dir->d_name);
+                    strcat(backpackItems[backpackItems[0].totalItems].itemDescriptionPath, ".txt");
                     backpackItems[backpackItems->totalItems].have = 0;
                     printf("Item '%s' loaded, img: %s, txt: %s\n", backpackItems[backpackItems->totalItems].itemName,backpackItems[backpackItems->totalItems].itemImagePath,backpackItems[backpackItems->totalItems].itemDescriptionPath);
-                    (backpackItems->totalItems)++;
+                    (backpackItems[0].totalItems)++;
                 }
             }
         }
@@ -487,7 +663,7 @@ void render(SDL_Renderer* renderer, Scene scenes[], int currentSceneIndex, TTF_F
             char likeText[1024] = "";
             for (int i = 0; i < totalLikes; i++) {
                 char line[256];
-                sprintf(line, "%s : %d \n", likes[i].name, likes[i].value);
+                sprintf(line, "%s : %d \n", &likes[i].name[0], likes[i].value);
                 strcat(likeText, line);
             }
 
@@ -515,11 +691,14 @@ void toggleBackpackDisplay(bool* backpackVisible, SDL_Renderer* renderer, Backpa
     if (*backpackVisible) {
         // 如果背包顯示，則渲染背包內容
         // printf("%d \n",backpackItems->totalItems);
-        for (int i = 0; i < backpackItems->totalItems; i++) {
+        printf("%d: ", backpackItems[0].totalItems);
+        for (int i = 0; i < backpackItems[0].totalItems; i++) {
+            printf("%d ",backpackItems[i].have);
             if(backpackItems[i].have){
                 SDL_RenderCopy(renderer, backpackItems[i].itemTexture, NULL, &backpackItems[i].itemRect);
             }
         }
+        printf("\n");
         SDL_RenderPresent(renderer);
     }
 }
@@ -559,17 +738,15 @@ void handleDialogTags(char* dialogText, Like likes[], int totalLikes, Backpack* 
                             }
                         }
                     }
-                } else if (strcmp(token, "backpack") == 0) {
-                    // 增加背包道具
-                    token = strtok_r(NULL, " ", &context);
+                } 
+                if (strcmp(token, "backpack") == 0) {
+                    token = strtok_r(NULL, " ", &context); // 獲取道具名稱
                     if (token != NULL) {
-                        for (int i = 0; i < backpackItems->totalItems; i++) {
+                        for (int i = 0; i < backpackItems[0].totalItems; i++) {
                             if (strcmp(backpackItems[i].itemName, token) == 0) {
-                                token = strtok_r(NULL, " ", &context);
-                                if (token != NULL) {
-                                    backpackItems[i].have += atoi(token); // 增加道具數量
-                                    break;
-                                }
+                                backpackItems[i].have += 1; // 增加道具數量
+                                printf("get %s \n", backpackItems[i].itemName);
+                                break;
                             }
                         }
                     }
@@ -587,14 +764,124 @@ void handleDialogTags(char* dialogText, Like likes[], int totalLikes, Backpack* 
 void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes, bool* backpackVisible, SDL_Renderer* renderer, Backpack* backpackItems, TTF_Font* font, GameState* gameState) {
     while (SDL_PollEvent(e) != 0) {
         // 檢查是否需要顯示開始畫面
+        /*
         if (*currentSceneIndex == -1) {
             *gameState = GAME_STATE_START_SCREEN;
-            if (!showStartScreen(renderer, font, gameState)) {
+            if (!showStartScreen(renderer, &font, gameState,fontSize)) {
                 *running = false; // 如果 showStartScreen 返回 false，則退出遊戲
             } else {
                 *currentSceneIndex = 0; // 重置場景索引以重新開始遊戲
             }
         }
+        */
+        if (e->type == SDL_QUIT) {
+            *running = false;
+        } else if (e->type == SDL_KEYDOWN && e->key.keysym.sym == SDLK_b) {
+            // 切換背包顯示狀態
+            toggleBackpackDisplay(backpackVisible, renderer, backpackItems);
+        } else if (e->type == SDL_MOUSEBUTTONDOWN) {
+            int x, y;
+            SDL_GetMouseState(&x, &y);
+            
+            // 在處理對話事件之前，調用 handleDialogTags 函式
+            Dialog* currentDialog = &scenes[*currentSceneIndex].dialogs[scenes[*currentSceneIndex].currentDialogIndex];
+            handleDialogTags(currentDialog->text, likes, totalLikes, backpackItems);
+            // 檢查是否點擊了對話區域
+            if (!*backpackVisible && y > WINDOW_HEIGHT - DIALOG_HEIGHT) {
+                if(scenes[*currentSceneIndex].currentDialogIndex == scenes[*currentSceneIndex].totalDialogs-1){
+                    // printf("flag\n");
+                    *currentSceneIndex = scenes[*currentSceneIndex].nextSceneIndex;
+                }
+                updateDialogTexture(renderer, font, currentDialog, backpackItems);
+                Scene* currentScene = &scenes[*currentSceneIndex];
+                currentScene->currentDialogIndex = (currentScene->currentDialogIndex + 1) % currentScene->totalDialogs;
+                // 如果對話所屬的背景和當前的不同，則需要切換背景
+                if (currentScene->dialogs[currentScene->currentDialogIndex].at_background != currentScene->currentBackgroundIndex) {
+                    currentScene->currentBackgroundIndex = currentScene->dialogs[currentScene->currentDialogIndex].at_background;
+                }
+            }
+            
+            // 檢查是否點擊了選項
+            if (!*backpackVisible) {
+                for (int i = 0; i < currentDialog->totalOptions; i++) {
+                    SDL_Rect optionRect = currentDialog->options[i].rect;
+                    if (x >= optionRect.x && x <= (optionRect.x + optionRect.w) &&
+                        y >= optionRect.y && y <= (optionRect.y + optionRect.h)) {
+                        // 更新場景索引前進行轉場效果
+                        int nextSceneIndex = currentDialog->options[i].nextSceneIndex;
+                        SDL_Texture* currentTexture = scenes[*currentSceneIndex].backgrounds[0].texture;
+                        SDL_Texture* nextTexture = scenes[nextSceneIndex].backgrounds[0].texture;
+                        transitionEffect(renderer, currentTexture, nextTexture, 1000); // 1秒的轉場
+                        // 更新場景索引
+                        printf("切換至 %d \n",currentDialog->options[i].nextSceneIndex);
+                        *currentSceneIndex = currentDialog->options[i].nextSceneIndex;
+                        
+                        // 重置當前場景的對話索引，以便從新場景的第一句話開始
+                        scenes[*currentSceneIndex].currentDialogIndex = 0;
+                        
+                        // 更新場景的背景索引
+                        scenes[*currentSceneIndex].currentBackgroundIndex = scenes[*currentSceneIndex].dialogs[0].at_background;
+                        
+                        // 由於場景已經改變，跳出選項檢查循環
+                        break;
+                    }
+                }
+            }
+
+            
+            // 如果背包可見，則檢查滑鼠是否靠近任何道具圖片
+            if (*backpackVisible) {
+                displayItemDescription(renderer, font, x, y, backpackItems);
+            }
+            
+        }
+    }
+}
+
+void transitionEffect(SDL_Renderer* renderer, SDL_Texture* currentTexture, SDL_Texture* nextTexture, int transitionTime) {
+    // 設置初始透明度為完全不透明
+    SDL_SetTextureAlphaMod(currentTexture, 255);
+    SDL_SetTextureAlphaMod(nextTexture, 0);
+
+    // 計算每一步的透明度變化量
+    int alphaStep = 255 / (transitionTime / 10); // 假設每10毫秒更新一次
+
+    // 逐漸減少當前場景的透明度，增加下一個場景的透明度
+    for (int alpha = 255; alpha >= 0; alpha -= alphaStep) {
+        // 設置當前場景的透明度
+        SDL_SetTextureAlphaMod(currentTexture, alpha);
+        // 設置下一個場景的透明度
+        SDL_SetTextureAlphaMod(nextTexture, 255 - alpha);
+
+        // 清除畫面
+        SDL_RenderClear(renderer);
+
+        // 渲染當前場景
+        SDL_RenderCopy(renderer, currentTexture, NULL, NULL);
+        // 渲染下一個場景
+        SDL_RenderCopy(renderer, nextTexture, NULL, NULL);
+
+        // 更新畫面
+        SDL_RenderPresent(renderer);
+
+        // 等待一段時間
+        SDL_Delay(10);
+    }
+}
+/*
+void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes, bool* backpackVisible, SDL_Renderer* renderer, Backpack* backpackItems, TTF_Font* font, GameState* gameState) {
+    while (SDL_PollEvent(e) != 0) {
+        // 檢查是否需要顯示開始畫面
+        
+        if (*currentSceneIndex == -1) {
+            *gameState = GAME_STATE_START_SCREEN;
+            if (!showStartScreen(renderer, &font, gameState,fontSize)) {
+                *running = false; // 如果 showStartScreen 返回 false，則退出遊戲
+            } else {
+                *currentSceneIndex = 0; // 重置場景索引以重新開始遊戲
+            }
+        }
+        
         if (e->type == SDL_QUIT) {
             *running = false;
         } else if (e->type == SDL_KEYDOWN && e->key.keysym.sym == SDLK_b) {
@@ -650,48 +937,6 @@ void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene sce
                 displayItemDescription(renderer, font, x, y, backpackItems);
             }
             
-        }
-    }
-}
-
-/*
-void handleEvents(SDL_Event* e, bool* running, int* currentSceneIndex, Scene scenes[], int totalScenes) {
-    while (SDL_PollEvent(e) != 0) {
-        if (e->type == SDL_QUIT) {
-            *running = false;
-        } else if (e->type == SDL_MOUSEBUTTONDOWN) {
-            int x, y;
-            SDL_GetMouseState(&x, &y);
-            Dialog* currentDialog = &scenes[*currentSceneIndex].dialogs[scenes[*currentSceneIndex].currentDialogIndex];
-            
-            // 檢查是否點擊了選項
-            for (int i = 0; i < currentDialog->totalOptions; i++) {
-                SDL_Rect optionRect = currentDialog->options[i].rect;
-                if (x >= optionRect.x && x <= (optionRect.x + optionRect.w) &&
-                    y >= optionRect.y && y <= (optionRect.y + optionRect.h)) {
-                    // 更新場景索引
-                    *currentSceneIndex = currentDialog->options[i].nextSceneIndex;
-                    // 重置當前場景的對話索引，以便從新場景的第一句話開始
-                    scenes[*currentSceneIndex].currentDialogIndex = 0;
-                    // 更新場景的背景索引
-                    scenes[*currentSceneIndex].currentBackgroundIndex = scenes[*currentSceneIndex].dialogs[0].at_background;
-                }
-            }
-
-            // 檢查是否點擊了對話區域
-            if(currentDialog->totalOptions!=0){
-                continue;
-            }
-            if (y > WINDOW_HEIGHT - DIALOG_HEIGHT) {
-                Scene* currentScene = &scenes[*currentSceneIndex];
-                currentScene->currentDialogIndex = (currentScene->currentDialogIndex + 1) % currentScene->totalDialogs;
-                Dialog* currentDialog = &currentScene->dialogs[currentScene->currentDialogIndex];
-                // 如果對話所屬的背景和當前的不同，則需要切換背景
-                if (currentDialog->at_background != currentScene->currentBackgroundIndex) {
-                    currentScene->currentBackgroundIndex = currentDialog->at_background;
-                }
-            }
-
         }
     }
 }

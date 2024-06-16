@@ -198,7 +198,7 @@ void load_story(Scene scenes[]) {
 
     scenes[1].options = (Option*)calloc(2 , sizeof(Option));
     if(scenes[1].options != NULL){
-        scenes[1].options[0] = (Option){"(1)你好，我是一個新手記者，剛入職這個行業三個月，希望我們合作愉快。",NULL,{WINDOW_WIDTH-400, WINDOW_HEIGHT - DIALOG_HEIGHT - 150, 400, 50},2};
+        scenes[1].options[0] = (Option){"(1)你好，我是一個新手記者，剛入職這個行業三個月，希望我們合作愉快。",NULL,{WINDOW_WIDTH-400, WINDOW_HEIGHT - DIALOG_HEIGHT - 180, 400, 50},2};
         scenes[1].options[1] = (Option){"(2)你好，我的姊姊是這起事件的受害者之一，所以請你一定要把所有資訊都告訴我，我會盡所能協助破案。",NULL,{WINDOW_WIDTH-400, WINDOW_HEIGHT - DIALOG_HEIGHT - 70, 400, 50},36};
     }
     scenes[1].dialogs[0].options = scenes[1].options;
